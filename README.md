@@ -8,10 +8,13 @@ This is currently only Mezzanine pages, product categories and Cartridge product
 1. Clone this repository in your project path.
 2. Add the theme to your settings, making sure it is **before** all Mezzanine / Cartridge apps.
 
+```
 	INSTALLED_APPS = (
 	    "mezzcart-bs3",
 	    "cartridge.shop",
 	    "mezzanine.boot",
 		...
 	)
+```
+	
 3. Customize the theme as desired.
