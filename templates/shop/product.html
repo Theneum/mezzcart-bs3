@@ -1,0 +1,129 @@
+{% extends "shop/base.html" %}
+{% load mezzanine_tags shop_tags rating_tags i18n %}
+
+{% block meta_title %}{{ product.meta_title }}{% endblock %}
+
+{% block meta_keywords %}{% metablock %}
+{% for keyword in product.keywords.all %}
+    {% if not forloop.first %}, {% endif %}
+    {{ keyword }}
+{% endfor %}
+{% endmetablock %}{% endblock %}
+
+{% block meta_description %}{% metablock %}
+{{ product.description }}
+{% endmetablock %}{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script src="{{ STATIC_URL }}mezzanine/js/jquery.tools.toolbox.expose.js"></script>
+<script src="{{ STATIC_URL }}mezzanine/js/jquery.tools.overlay.js"></script>
+<script>var variations = {{ variations_json|safe }};</script>
+<script src="{{ STATIC_URL }}cartridge/js/product_variations.js"></script>
+{% endblock %}
+
+{% block breadcrumb_menu %}
+{{ block.super }}
+<li>{{ product.title }}</li>
+{% endblock %}
+
+{% block title %}
+{% editable product.title %}{{ product.title }}{% endeditable %}
+{% endblock %}
+
+{% block main %}
+{% if images %}
+{% spaceless %}
+<ul id="product-images-large" class="thumbnails list-unstyled">
+    {% for image in images %}
+    <li id="image-{{ image.id }}-large"{% if not forloop.first %}style="display:none;"{% endif %}>
+    	<a class="product-image-large thumbnail" rel="#image-full-{{ image.id }}" href="{{ MEDIA_URL }}{{ image.file }}">
+            <img alt="{{ image.description }}" src="{{ MEDIA_URL }}{% thumbnail image.file 0 300 %}" class="img-responsive">
+        </a>
+        <div class="product-image-full" style="display:none;" id="image-full-{{ image.id }}">
+            <img src="{{ MEDIA_URL }}{{ image.file }}">
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+{% if images|length != 1 %}
+<div id="product-images-thumb" class="row list-unstyled">
+	{% for image in images %}
+	<div class="col-sm-6 col-md-3" id="thumb">
+        <a class="thumbnail" id="image-{{ image.id }}" href="{{ MEDIA_URL }}{{ image.file }}">
+            <img alt="{{ image.description }}" src="{{ MEDIA_URL }}{% thumbnail image.file 200 150 %}">
+        </a>
+    </div>
+	{% endfor %}
+</div><br>
+{% endif %}
+
+{% endspaceless %}
+{% endif %}
+
+{% editable product.content %}
+{{ product.content|richtext_filter|safe }}
+{% endeditable %}
+
+{% if product.available and has_available_variations %}
+<ul id="variations" class="list-unstyled">
+	{% for variation in variations %}
+	<li id="variation-{{ variation.sku }}"
+		{% if not variation.default %}style="display:none;"{% endif %}>
+		{% if variation.has_price %}
+			{% if variation.on_sale %}
+				<span class="old-price">{{ variation.unit_price|currency }}</span>
+				{% trans "On sale:" %}
+			{% endif %}
+			<span class="price">{{ variation.price|currency }}</span>
+		{% else %}
+		    {% if has_available_variations %}
+		    {% trans "The selected options are currently unavailable." %}
+		    {% endif %}
+		{% endif %}
+	</li>
+	{% endfor %}
+</ul>
+<form method="post" id="add-cart" class="form-horizontal form-shop">
+    {% csrf_token %}
+    {% fields_for add_product_form %}
+    <div class="form-actions col-lg-5 col-lg-push-1 clearfix">
+        <button type="submit" class="btn btn-primary btn-lg" name="add_cart"><span class="glyphicon glyphicon-shopping-cart"></span> {% trans "Buy" %}</button>
+        {# <input type="submit" class="btn btn-primary btn-lg" name="add_cart" value="{% trans "Buy" %}"> #}
+        {% if settings.SHOP_USE_WISHLIST %}
+        <input type="submit" class="btn btn-default" name="add_wishlist" value="{% trans "Save for later" %}">
+        {% endif %}
+    </div>
+</form>
+{% else %}
+<p>{% trans "This product is currently unavailable." %}</p>
+{% endif %}
+
+{% if settings.SHOP_USE_RATINGS %}
+    {% rating_for product %}
+{% endif %}
+
+{% if related_products %}
+<h2>{% trans "Related Products" %}</h2>
+<ul id="related-products" class="thumbnails">
+    {% for product in related_products %}
+    <li>
+        <a class="thumbnail" href="{{ product.get_absolute_url }}">
+            {% if product.image %}
+            <img src="{{ MEDIA_URL }}{% thumbnail product.image 90 90 %}">
+            {% endif %}
+            <h6>{{ product }}</h6>
+            {% if product.has_price %}
+                {% if product.on_sale %}
+                <span class="old-price">{{ product.unit_price|currency }}</span>
+                {% endif %}
+                <span class="price">{{ product.price|currency }}</span>
+            {% endif %}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}
